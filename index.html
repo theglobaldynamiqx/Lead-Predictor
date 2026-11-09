@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lead Predictor</title>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e6e8ef;--acc:#4f46e5;--acc2:#7c3aed;--accsoft:#eef0ff;--ok:#059669;--oksoft:#d1fae5;--warn:#d97706;--warnsoft:#fef3c7;--bad:#dc2626;--badsoft:#fee2e2;--shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.06)}
+[data-t=dark]{--bg:#0b0f1a;--card:#131a2b;--ink:#e8ecf6;--mut:#8b96b0;--line:#222c44;--accsoft:#1d2347;--oksoft:#0d3a2e;--warnsoft:#41300d;--badsoft:#431616;--shadow:none}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;transition:background .2s}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700}.logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;font-size:15px}
+.wrap{max-width:1180px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1.15fr .85fr;gap:20px;align-items:start}
+@media(max-width:900px){.wrap{grid-template-columns:1fr;padding:14px}.sticky{position:static!important}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+h2{margin:0 0 4px;font-size:16px}.sub{color:var(--mut);font-size:13px;margin:0 0 16px}
+.grp{margin-bottom:16px}.lbl{font-size:12px;font-weight:600;color:var(--mut);margin-bottom:6px;display:flex;justify-content:space-between}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{border:1px solid var(--line);background:transparent;color:var(--ink);padding:6px 12px;border-radius:99px;font:inherit;font-size:13px;cursor:pointer;transition:all .15s}
+.pill:hover{border-color:var(--acc);transform:translateY(-1px)}.pill.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.35)}
+.pill.no.on{background:var(--mut);border-color:var(--mut);box-shadow:none}.pill.unk.on{background:var(--accsoft);color:var(--acc);border-color:var(--acc);box-shadow:none}
+input.txt{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit}input.txt:focus{outline:2px solid var(--acc);border-color:transparent}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}@media(max-width:560px){.two{grid-template-columns:1fr}}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 16px;font:inherit;cursor:pointer;transition:all .15s}.btn:hover{border-color:var(--acc)}
+.btn.p{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:0;font-weight:600}.btn.p:hover{filter:brightness(1.1)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.sticky{position:sticky;top:76px}
+.ringwrap{display:flex;align-items:center;gap:20px}.ring{position:relative;width:150px;height:150px;flex:none}.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;text-align:center}.ring .n{font-size:38px;font-weight:800;line-height:1}.ring .s{font-size:11px;color:var(--mut)}
+.tier{display:inline-block;font-weight:700;font-size:13px;padding:4px 12px;border-radius:99px}
+.meter{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:6px}.meter i{display:block;height:100%;background:var(--acc);border-radius:6px;transition:width .5s}
+.note{font-size:12px;color:var(--mut)}.callout{background:var(--accsoft);border-radius:12px;padding:10px 14px;font-size:12.5px;margin:14px 0}
+.fac{display:grid;grid-template-columns:1fr 54px;gap:4px 10px;align-items:center;padding:8px 8px;border-radius:10px;cursor:default;font-size:13px}
+.fac.act{cursor:pointer}.fac.act:hover{background:var(--accsoft)}.fac .b{grid-column:1/-1;height:5px;background:var(--line);border-radius:5px;overflow:hidden}.fac .b i{display:block;height:100%;border-radius:5px;transition:width .5s}
+.fac .pt{text-align:right;font-weight:700}.fac .hint{font-size:11px;color:var(--acc)}
+.tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:12px;width:fit-content;margin-bottom:16px}.tab{border:0;background:transparent;color:var(--mut);padding:7px 16px;border-radius:9px;cursor:pointer;font:inherit;font-weight:600}.tab.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.full{grid-column:1/-1}
+.lead{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 4px;border-top:1px solid var(--line)}.lead:first-child{border-top:0}
+.chip{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--accsoft);color:var(--acc)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.seg button{border:0;background:transparent;color:var(--mut);padding:5px 11px;cursor:pointer;font:inherit;font-size:12px;font-weight:600}.seg button.won.on{background:var(--oksoft);color:var(--ok)}.seg button.lost.on{background:var(--badsoft);color:var(--bad)}.seg button.open.on{background:var(--accsoft);color:var(--acc)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}@media(max-width:700px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--bg);border-radius:12px;padding:12px 14px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--mut)}
+.row{display:flex;gap:10px;align-items:center;margin:6px 0;font-size:13px}.row .nm{width:150px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row .bar{flex:1;height:10px;background:var(--line);border-radius:6px;overflow:hidden}.row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:6px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,80px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:600;transition:transform .3s;z-index:9}#toast.show{transform:translate(-50%,0)}
+.empty{text-align:center;color:var(--mut);padding:30px 0}
+</style></head><body>
+<div class="top"><div class="brand"><div class="logo">◎</div>Lead Predictor</div><div><button class="btn" id="theme">☾ Dark</button></div></div>
+<div class="wrap">
+ <section class="card"><h2>Describe the lead</h2><p class="sub">Tap what you know. Anything left as <b>Unknown</b> never counts for or against the lead.</p>
+  <div class="grp"><input class="txt" id="name" placeholder="Company or contact name (needed to save)"></div>
+  <div id="form"></div>
+  <div style="display:flex;gap:10px;margin-top:8px"><button class="btn p" id="save">＋ Save lead</button><button class="btn" id="reset">Reset</button></div></section>
+ <aside class="card sticky" id="result"></aside>
+ <section class="card full"><div class="tabs" id="tabs"></div><div id="panel"></div></section>
+</div>
+<div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id), esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const YN=[["1","Yes"],["0","No"]];
+const FIELDS=[
+ {k:"industry",l:"Industry",o:["E-commerce","SaaS","Software / Tech","EdTech","HealthTech","PropTech","FinTech","Subscription","Other"]},
+ {k:"model",l:"Business model",o:["B2C / DTC","Subscription","B2B SaaS","Marketplace","Services","Other"]},
+ {k:"emp",l:"Company size (employees)",o:[["5","1–9"],["30","10–49"],["120","50–249"],["600","250–999"],["2000","1,000+"]],num:1},
+ {k:"rev",l:"Annual revenue",o:[["500000","< $1M"],["4000000","$1–10M"],["30000000","$10–100M"],["200000000","$100M+"]],num:1},
+ {k:"esp",l:"Already uses an ESP / CRM (Klaviyo, HubSpot…)?",o:YN},{k:"dm",l:"Decision-maker identified?",o:YN},
+ {k:"email",l:"Verified work email?",o:YN},{k:"sig",l:"Recent buying signal (hiring, funding, launch)?",o:YN},{k:"ref",l:"Came from a referral?",o:YN}];
+const FIT_IND=["E-commerce","SaaS","Software / Tech","EdTech","HealthTech","PropTech","FinTech","Subscription"],FIT_MOD=["B2C / DTC","Subscription","B2B SaaS","Marketplace"];
+const nz=v=>v===""||v==null;
+const F=[
+ ["industry","Industry fits Dynamiqx targets",15,d=>nz(d.industry)?null:+FIT_IND.includes(d.industry),{industry:"SaaS"}],
+ ["model","Recurring / lifecycle-driven model",10,d=>nz(d.model)?null:+FIT_MOD.includes(d.model),{model:"Subscription"}],
+ ["size","10–1,000 employees",10,d=>nz(d.emp)?null:+(d.emp>=10&&d.emp<=1000),{emp:"120"}],
+ ["revenue","Revenue $1M–$100M",10,d=>nz(d.rev)?null:+(d.rev>=1e6&&d.rev<=1e8),{rev:"4000000"}],
+ ["esp","Existing ESP/CRM (migration need)",15,d=>nz(d.esp)?null:+d.esp,{esp:"1"}],
+ ["dm","Decision-maker identified",15,d=>nz(d.dm)?null:+d.dm,{dm:"1"}],
+ ["email","Verified work email",10,d=>nz(d.email)?null:+d.email,{email:"1"}],
+ ["sig","Recent buying signal",10,d=>nz(d.sig)?null:+d.sig,{sig:"1"}],
+ ["ref","Referral source",5,d=>nz(d.ref)?null:+d.ref,{ref:"1"}]];
+const sigm=z=>1/(1+Math.exp(-z)), feats=d=>F.map(f=>f[3](d));
+let S={leads:[],trained:null,theme:"light"}; try{S=Object.assign(S,JSON.parse(localStorage.getItem("lp2")||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem("lp2",JSON.stringify(S))}catch(e){}};
+let D={name:"",industry:"",model:"",emp:"",rev:"",esp:"",dm:"",email:"",sig:"",ref:""}, tab="leads", q="", filt="all";
+
+function predict(d){const x=feats(d),known=x.filter(v=>v!==null).length,pts=F.map((f,i)=>x[i]===1?f[2]:0),score=pts.reduce((a,b)=>a+b,0);
+ let prob=null;if(S.trained)prob=sigm(S.trained.b+x.reduce((s,v,i)=>s+(v===1?S.trained.w[i]:0),0));return{x,known,pts,score,conf:known/F.length,prob}}
+
+function renderForm(){$("form").innerHTML=FIELDS.map(f=>`<div class="grp"><div class="lbl">${f.l}</div><div class="pills">`+
+ f.o.map(o=>{const [v,t]=Array.isArray(o)?o:[o,o];return `<button class="pill ${t==="No"?"no":""} ${String(D[f.k])===v?"on":""}" data-k="${f.k}" data-v="${esc(v)}">${esc(t)}</button>`}).join("")+
+ `<button class="pill unk ${nz(D[f.k])?"on":""}" data-k="${f.k}" data-v="">Unknown</button></div></div>`).join("")}
+function renderResult(){const p=predict(D),C=2*Math.PI*62,tier=p.score>=70?["Strong fit","var(--oksoft)","var(--ok)"]:p.score>=45?["Moderate fit","var(--warnsoft)","var(--warn)"]:["Weak fit","var(--badsoft)","var(--bad)"];
+ const confL=p.conf>=.75?"High":p.conf>=.4?"Medium":"Low",col=p.score>=70?"#059669":p.score>=45?"#d97706":"#dc2626";
+ $("result").innerHTML=`<div class="ringwrap"><div class="ring"><svg width="150" height="150"><circle cx="75" cy="75" r="62" fill="none" stroke="var(--line)" stroke-width="12"/><circle cx="75" cy="75" r="62" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-p.score/100)}" style="transition:stroke-dashoffset .6s,stroke .3s"/></svg><div class="num"><div><div class="n">${p.score}</div><div class="s">FIT SCORE</div></div></div></div>
+ <div><span class="tier" style="background:${tier[1]};color:${tier[2]}">${tier[0]}</span><div class="note" style="margin-top:8px">Data confidence: <b>${confL}</b> · ${p.known}/${F.length} facts</div><div class="meter"><i style="width:${p.conf*100}%"></i></div></div></div>
+ ${p.prob!=null?`<div class="callout"><b>Learned conversion probability: ${Math.round(p.prob*100)}%</b><br>From your ${S.trained.n} logged outcomes. Rough until you have 100+.</div>`:`<div class="callout"><b>Fit score, not a probability.</b> A real % chance needs your own win/loss history. Log outcomes below and it unlocks at 30.</div>`}
+ <div class="lbl" style="margin-top:6px"><span>Score breakdown</span><span style="font-weight:400">tap a gap to try “what if”</span></div>
+ ${F.map((f,i)=>{const st=p.x[i],act=st!==1;return `<div class="fac ${act?"act":""}" ${act?`data-what="${i}"`:""}><span>${st===1?"✓":st===0?"✗":"?"} ${f[1]}${st===null?` <span class="note">— unknown</span>`:""}${act?` <span class="hint">what if +${f[2]}</span>`:""}</span><span class="pt" style="color:${st===1?"var(--ok)":"var(--mut)"}">${st===1?"+"+f[2]:"0"}<span class="note">/${f[2]}</span></span><div class="b"><i style="width:${st===1?100:0}%;background:var(--ok)"></i></div></div>`}).join("")}`}
+
+function renderTabs(){$("tabs").innerHTML=[["leads","Leads"],["insights","Insights"],["model","Learning"]].map(([k,l])=>`<button class="tab ${tab===k?"on":""}" data-tab="${k}">${l}</button>`).join("")}
+function renderPanel(){const done=S.leads.filter(l=>l.outcome),won=done.filter(l=>l.outcome==="won").length;
+ if(tab==="leads"){const list=S.leads.map((l,i)=>({...l,i})).filter(l=>(filt==="all"||(filt==="open"?!l.outcome:l.outcome===filt))&&(l.name+l.d.industry).toLowerCase().includes(q.toLowerCase()));
+  $("panel").innerHTML=`<div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap"><input class="txt" id="q" placeholder="Search leads…" value="${esc(q)}" style="max-width:260px"><div class="seg">${["all","open","won","lost"].map(f=>`<button class="${f} ${filt===f?"on":""}" data-f="${f}" style="${filt===f&&f==="all"?"background:var(--accsoft);color:var(--acc)":""}">${f[0].toUpperCase()+f.slice(1)}</button>`).join("")}</div><span style="flex:1"></span><button class="btn" id="csv">Export CSV</button><button class="btn" id="wipe">Delete all</button></div>`+
+  (list.length?list.map(l=>`<div class="lead"><div><b>${esc(l.name)}</b><div class="note">${esc([l.d.industry,l.d.model].filter(Boolean).join(" · ")||"No details")}</div></div><div><span class="chip">Fit ${l.score}</span>${l.prob!=null?` <span class="chip">${Math.round(l.prob*100)}%</span>`:""}</div>
+  <div style="display:flex;gap:8px;align-items:center"><div class="seg" data-o="${l.i}">${[["","Open"],["won","Won"],["lost","Lost"]].map(([v,t])=>`<button class="${v||"open"} ${(l.outcome||"")===v?"on":""}" data-v="${v}">${t}</button>`).join("")}</div><button class="btn" data-load="${l.i}">Edit</button><button class="btn" data-del="${l.i}">✕</button></div></div>`).join(""):`<div class="empty">${S.leads.length?"No leads match.":"No leads yet — describe one on the left and hit Save."}</div>`)}
+ if(tab==="insights"){const by={};done.forEach(l=>{const k=l.d.industry||"Unknown";by[k]=by[k]||{w:0,n:0};by[k].n++;if(l.outcome==="won")by[k].w++});
+  const avgW=won?Math.round(S.leads.filter(l=>l.outcome==="won").reduce((a,l)=>a+l.score,0)/won):"—",lost=done.length-won,avgL=lost?Math.round(S.leads.filter(l=>l.outcome==="lost").reduce((a,l)=>a+l.score,0)/lost):"—";
+  $("panel").innerHTML=`<div class="stats"><div class="stat"><b>${S.leads.length}</b><span>Leads saved</span></div><div class="stat"><b>${done.length?Math.round(won/done.length*100)+"%":"—"}</b><span>Win rate (closed)</span></div><div class="stat"><b>${avgW}</b><span>Avg fit score, won</span></div><div class="stat"><b>${avgL}</b><span>Avg fit score, lost</span></div></div>
+  <div class="lbl">Win rate by industry (closed leads)</div>${Object.keys(by).length?Object.entries(by).sort((a,b)=>b[1].n-a[1].n).map(([k,v])=>`<div class="row"><span class="nm">${esc(k)}</span><div class="bar"><i style="width:${v.w/v.n*100}%"></i></div><span>${v.w}/${v.n}</span></div>`).join(""):'<div class="empty">Mark leads Won or Lost to see this.</div>'}
+  <p class="note">If won leads don't score noticeably higher than lost ones, the starting weights are off for your market — that's exactly what the learning step corrects.</p>`}
+ if(tab==="model"){const lo=done.length-won,ready=done.length>=30&&won>=5&&lo>=5,m=S.trained,pct=Math.min(100,done.length/30*100);
+  $("panel").innerHTML=`<div class="lbl"><span>Progress to learning (30 outcomes, ≥5 wins, ≥5 losses)</span><span>${done.length}/30 · ${won} won · ${lo} lost</span></div><div class="meter" style="height:10px"><i style="width:${pct}%"></i></div>
+  <p style="margin-top:14px"><button class="btn p" id="train" ${ready?"":"disabled"}>${m?"Retrain":"Train"} on my outcomes</button> ${m?'<button class="btn" id="untrain">Back to fit score only</button>':""}</p>
+  ${m?`<p class="note">Trained ${m.at} on ${m.n} outcomes. Accuracy on that same data: ${Math.round(m.acc*100)}% (base win rate ${Math.round(m.rate*100)}%). Training accuracy flatters the model — treat probabilities as rough until 100+ outcomes.</p><div class="lbl">What your data says matters</div>
+  ${F.map((f,i)=>`<div class="row"><span class="nm" style="width:240px">${f[1]}</span><div class="bar"><i style="width:${Math.min(100,Math.abs(m.w[i])/2*100)}%;${m.w[i]<0?"background:var(--bad)":""}"></i></div><span style="width:90px">${m.w[i]>.15?"▲ raises":m.w[i]<-.15?"▼ lowers":"≈ neutral"}</span></div>`).join("")}`:`<p class="note">Until then, scores use my starting weights. Nothing is sent anywhere; training runs in your browser.</p>`}`}}
+
+function train(){const done=S.leads.filter(l=>l.outcome),X=done.map(l=>feats(l.d).map(v=>v===1?1:0)),y=done.map(l=>l.outcome==="won"?1:0),n=y.length,k=F.length;let w=Array(k).fill(0),b=0;
+ for(let it=0;it<3000;it++){const g=Array(k).fill(0);let gb=0;for(let i=0;i<n;i++){let z=b;for(let j=0;j<k;j++)z+=w[j]*X[i][j];const e=sigm(z)-y[i];gb+=e;for(let j=0;j<k;j++)g[j]+=e*X[i][j]}b-=.3*gb/n;for(let j=0;j<k;j++)w[j]-=.3*(g[j]/n+.05*w[j])}
+ let ok=0;for(let i=0;i<n;i++){let z=b;for(let j=0;j<k;j++)z+=w[j]*X[i][j];if((sigm(z)>.5)==y[i])ok++}
+ S.trained={w,b,n,acc:ok/n,rate:y.reduce((a,c)=>a+c,0)/n,at:new Date().toISOString().slice(0,10)};
+ // refresh stored predictions so the table reflects the new model
+ S.leads.forEach(l=>{l.prob=predict(l.d).prob})}
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1800)}
+function all(){renderForm();renderResult();renderTabs();renderPanel();document.documentElement.dataset.t=S.theme;$("theme").textContent=S.theme==="dark"?"☀ Light":"☾ Dark"}
+
+document.addEventListener("click",e=>{const t=e.target.closest("button,.fac");if(!t)return;
+ if(t.classList.contains("pill")){D[t.dataset.k]=t.dataset.v;renderForm();renderResult()}
+ else if(t.dataset.what!=null){Object.assign(D,F[+t.dataset.what][4]);renderForm();renderResult()}
+ else if(t.dataset.tab){tab=t.dataset.tab;renderTabs();renderPanel()}
+ else if(t.dataset.f){filt=t.dataset.f;renderPanel()}
+ else if(t.dataset.v!=null&&t.parentElement.dataset.o!=null){S.leads[+t.parentElement.dataset.o].outcome=t.dataset.v;save();renderPanel()}
+ else if(t.dataset.del!=null){if(confirm("Delete this lead?")){S.leads.splice(+t.dataset.del,1);save();all()}}
+ else if(t.dataset.load!=null){const l=S.leads[+t.dataset.load];D={name:l.name,...l.d};$("name").value=l.name;renderForm();renderResult();window.scrollTo({top:0,behavior:"smooth"})}
+ else if(t.id==="save"){const name=$("name").value.trim();if(!name){$("name").focus();toast("Give the lead a name first");return}const p=predict(D);const {name:_,...d}=D;S.leads.unshift({name,d,score:p.score,prob:p.prob,outcome:"",at:Date.now()});save();renderPanel();toast("Lead saved ✓")}
+ else if(t.id==="reset"){D={name:"",industry:"",model:"",emp:"",rev:"",esp:"",dm:"",email:"",sig:"",ref:""};$("name").value="";renderForm();renderResult()}
+ else if(t.id==="theme"){S.theme=S.theme==="dark"?"light":"dark";save();all()}
+ else if(t.id==="train"){train();save();all();toast("Model trained")}
+ else if(t.id==="untrain"){S.trained=null;S.leads.forEach(l=>l.prob=null);save();all()}
+ else if(t.id==="wipe"){if(confirm("Delete ALL leads and the trained model?")){S.leads=[];S.trained=null;save();all()}}
+ else if(t.id==="csv"){const r=[["name","industry","model","employees","revenue","esp","decision_maker","verified_email","buying_signal","referral","fit_score","predicted_prob","outcome"]].concat(S.leads.map(l=>[l.name,l.d.industry,l.d.model,l.d.emp,l.d.rev,l.d.esp,l.d.dm,l.d.email,l.d.sig,l.d.ref,l.score,l.prob??"",l.outcome]));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([r.map(x=>x.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n")],{type:"text/csv"}));a.download="leads.csv";a.click()}});
+document.addEventListener("input",e=>{if(e.target.id==="q"){q=e.target.value;const pos=e.target.selectionStart;renderPanel();const n=$("q");n.focus();n.setSelectionRange(pos,pos)}});
+all();
+</script></body></html>
